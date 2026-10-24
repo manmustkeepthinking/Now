@@ -49,12 +49,22 @@ export class BeatEngine {
   async unlock(): Promise<void> {
     const ctx = this.ensure()
     if (ctx.state === 'suspended') await ctx.resume()
-    // Silent buffer kickstarts iOS audio graph
+    // Silent buffer + short audible tick so Safari fully unlocks output
     const buf = ctx.createBuffer(1, 1, ctx.sampleRate)
     const src = ctx.createBufferSource()
     src.buffer = buf
     src.connect(ctx.destination)
     src.start(0)
+    const osc = ctx.createOscillator()
+    const g = ctx.createGain()
+    osc.frequency.value = 660
+    g.gain.setValueAtTime(0.0001, ctx.currentTime)
+    g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.005)
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06)
+    osc.connect(g)
+    g.connect(ctx.destination)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 0.07)
     this.unlocked = true
   }
 
@@ -67,7 +77,11 @@ export class BeatEngine {
 
   private ensure(): AudioContext {
     if (!this.ctx) {
-      this.ctx = new AudioContext()
+      const AC =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext
+      this.ctx = new AC()
       this.buildGraph(this.ctx)
     }
     return this.ctx
