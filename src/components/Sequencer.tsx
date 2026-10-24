@@ -8,6 +8,8 @@ interface SequencerProps {
   activeStep: number
   playing: boolean
   editMode: StepEditMode
+  selected: TrackId
+  onSelect: (id: TrackId) => void
   onBeginPaint: (id: TrackId, index: number) => void
   onContinuePaint: (id: TrackId, index: number) => void
   onPreview: (id: TrackId) => void
@@ -27,6 +29,8 @@ export function Sequencer({
   activeStep,
   playing,
   editMode,
+  selected,
+  onSelect,
   onBeginPaint,
   onContinuePaint,
   onPreview,
@@ -59,15 +63,17 @@ export function Sequencer({
         const mix = pattern.mix[drum.id]
         return (
           <div
-            className="track"
+            className={`track ${selected === drum.id ? 'is-selected' : ''}`}
             key={drum.id}
             style={{ '--track': drum.color, '--cols': cols } as CSSProperties}
           >
             <button
               type="button"
               className="track-label"
-              onClick={() => onPreview(drum.id)}
-              title={`Preview ${drum.label}`}
+              onClick={() => {
+                onSelect(drum.id)
+                onPreview(drum.id)
+              }}
             >
               {drum.label}
             </button>
@@ -77,7 +83,6 @@ export function Sequencer({
                 type="button"
                 className={`chip ${mix.mute ? 'is-active' : ''}`}
                 onClick={() => onMix(drum.id, { mute: !mix.mute })}
-                title="Mute"
               >
                 M
               </button>
@@ -85,7 +90,6 @@ export function Sequencer({
                 type="button"
                 className={`chip solo ${mix.solo ? 'is-active' : ''}`}
                 onClick={() => onMix(drum.id, { solo: !mix.solo })}
-                title="Solo"
               >
                 S
               </button>
@@ -98,35 +102,18 @@ export function Sequencer({
                 onChange={(e) =>
                   onMix(drum.id, { volume: Number(e.target.value) / 100 })
                 }
-                title="Volume"
                 aria-label={`${drum.label} volume`}
-              />
-              <input
-                type="range"
-                className="pan"
-                min={-100}
-                max={100}
-                value={Math.round(mix.pan * 100)}
-                onChange={(e) =>
-                  onMix(drum.id, { pan: Number(e.target.value) / 100 })
-                }
-                title="Pan"
-                aria-label={`${drum.label} pan`}
               />
             </div>
 
-            <div
-              className="steps"
-              role="group"
-              aria-label={`${drum.label} steps`}
-            >
+            <div className="steps" role="group" aria-label={`${drum.label} steps`}>
               {pattern.tracks[drum.id].map((step, i) => {
                 const isActive = playing && activeStep === i
                 const height =
                   editMode === 'velocity'
-                    ? `${Math.max(18, step.velocity * 100)}%`
+                    ? `${Math.max(22, step.velocity * 100)}%`
                     : editMode === 'probability'
-                      ? `${Math.max(18, step.probability * 100)}%`
+                      ? `${Math.max(22, step.probability * 100)}%`
                       : '100%'
                 return (
                   <button
@@ -152,7 +139,21 @@ export function Sequencer({
                       e.preventDefault()
                       onBeginPaint(drum.id, i)
                     }}
-                    onPointerEnter={() => onContinuePaint(drum.id, i)}
+                    onPointerEnter={(e) => {
+                      if (e.buttons) onContinuePaint(drum.id, i)
+                    }}
+                    onPointerMove={(e) => {
+                      // iOS: continue paint when finger moves across steps
+                      if (e.buttons || e.pressure > 0) {
+                        const el = document.elementFromPoint(e.clientX, e.clientY)
+                        const btn = el?.closest('.step') as HTMLElement | null
+                        if (btn?.dataset.track === drum.id && btn.dataset.step) {
+                          onContinuePaint(drum.id, Number(btn.dataset.step))
+                        }
+                      }
+                    }}
+                    data-track={drum.id}
+                    data-step={i}
                   />
                 )
               })}

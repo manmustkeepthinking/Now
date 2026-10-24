@@ -1,8 +1,6 @@
-# NOW — Beat-making DAW
+# NOW — Beat Lab (iPhone-first DAW)
 
-Production-oriented browser DAW for painting and playing beats. React + TypeScript + Web Audio API. Dark studio UI.
-
-**Stage 1 (current):** transport, 10-track step sequencer, built-in kit, lookahead scheduler.
+Touch-first beat-making DAW for Safari on iPhone. React + TypeScript + Web Audio. Dark studio UI.
 
 ## Run locally
 
@@ -11,22 +9,20 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (usually `http://localhost:5173`).
-
 ```bash
-npm run build
-npm run preview
+npm run build && npm run preview
 ```
 
-## Stage 1 features
+## Features
 
-- 16 / 32 / 64-step grid across 10 tracks (kick, trap snare, rim, clap, CH, OH, crash, perc, synth, 808)
-- Built-in synthesized kit — sound on first load, no user samples
-- Lookahead scheduling against `AudioContext.currentTime` (no `setInterval` note clock)
-- Transport: play/stop (Space), BPM 40–240, tap tempo, swing, metronome
-- Per-step velocity / probability / mute; per-track volume / pan / mute / solo
-- Undo / redo
+- **Stage 1:** 16/32/64-step sequencer, 12-track kit, lookahead clock, transport, undo
+- **Stage 2:** 808 piano roll (≥2 octaves), glide/decay, bass/lead/pad, per-track pitch/LP/HP/decay, master compress + reverb/delay
+- **Stage 3:** Import from iOS Files (`input type=file` → Splice Samples), IndexedDB persistence, browser, 4×4 pads
+- **Stage 4:** Patterns A–H, song chain, project save/share, WAV bounce via share sheet, PWA offline
 
-## Roadmap
+## iPhone notes
 
-See Project plan: Stage 2 (808 piano roll + synths + mixer), Stage 3 (local Splice library), Stage 4 (patterns / export / PWA).
+- Tap the unlock screen once to start audio (Safari requirement)
+- Add to Home Screen for standalone / offline
+- Splice: Files → On My iPhone → Splice → Samples → multi-select import
+- No File System Access API; no Splice login

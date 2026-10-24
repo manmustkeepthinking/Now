@@ -18,6 +18,8 @@ interface TransportProps {
   onRedo: () => void
   onClear: () => void
   onStarter: () => void
+  onExport: () => void
+  onSave: () => void
 }
 
 export function Transport({
@@ -38,6 +40,8 @@ export function Transport({
   onRedo,
   onClear,
   onStarter,
+  onExport,
+  onSave,
 }: TransportProps) {
   return (
     <section className="transport" aria-label="Transport">
@@ -59,18 +63,11 @@ export function Transport({
           value={bpm}
           onChange={(e) => onBpm(Number(e.target.value))}
         />
-        <input
-          className="num"
-          type="number"
-          min={40}
-          max={240}
-          value={bpm}
-          onChange={(e) => onBpm(Number(e.target.value))}
-        />
+        <span className="val">{bpm}</span>
       </label>
 
-      <button type="button" className="ghost" onClick={onTap}>
-        Tap
+      <button type="button" className="ghost tap" onClick={onTap}>
+        Tap tempo
       </button>
 
       <label className="ctrl">
@@ -85,7 +82,7 @@ export function Transport({
         <span className="val">{Math.round(swing * 100)}</span>
       </label>
 
-      <label className="check">
+      <label className="check big">
         <input
           type="checkbox"
           checked={metronome}
@@ -119,6 +116,12 @@ export function Transport({
         </button>
         <button type="button" className="ghost" onClick={onClear}>
           Clear
+        </button>
+        <button type="button" className="ghost" onClick={onSave}>
+          Save
+        </button>
+        <button type="button" className="ghost" onClick={onExport}>
+          Export WAV
         </button>
       </div>
     </section>
