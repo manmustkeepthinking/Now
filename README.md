@@ -2,6 +2,11 @@
 
 Touch-first beat-making DAW for Safari on iPhone. React + TypeScript + Web Audio. Dark studio UI.
 
+## Phone URL
+
+Open on iPhone Safari: **https://spry-fluorine-vut0tbm.tmp.now**  
+(Claim to keep: https://vercel.com/claim-deployment?code=3bd7fd81-7772-4f59-839b-32ba04bcde4c)
+
 ## Run locally
 
 ```bash
@@ -12,6 +17,7 @@ npm run dev
 ```bash
 npm run build && npm run preview
 ```
+
 
 ## Features
 
