@@ -266,6 +266,28 @@ export default function App() {
     })
   }
 
+  const setBpmSafe = (raw: number) => {
+    if (!Number.isFinite(raw)) return
+    setBpm(Math.min(240, Math.max(40, Math.round(raw))))
+  }
+
+  const clearSteps = () => {
+    commit((prev) => {
+      const next = structuredClone(prev)
+      for (const id of TRACK_IDS) {
+        next.tracks[id] = next.tracks[id].map((s) => ({
+          ...s,
+          on: false,
+          muted: false,
+          velocity: 1,
+          probability: 1,
+        }))
+      }
+      return next
+    })
+    setStatus(`Cleared pattern ${activeBank}`)
+  }
+
   const onTap = () => {
     const now = performance.now()
     const taps = tapTimes.current.filter((t) => now - t < 2500)
@@ -275,7 +297,7 @@ export default function App() {
     const intervals: number[] = []
     for (let i = 1; i < taps.length; i++) intervals.push(taps[i] - taps[i - 1])
     const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length
-    setBpm(Math.min(240, Math.max(40, Math.round(60000 / avg))))
+    setBpmSafe(60000 / avg)
   }
 
   const decodeSample = async (ab: ArrayBuffer) => {
@@ -371,7 +393,7 @@ export default function App() {
         canUndo={canUndo}
         canRedo={canRedo}
         onTogglePlay={() => void togglePlay()}
-        onBpm={setBpm}
+        onBpm={setBpmSafe}
         onSwing={setSwing}
         onMetronome={setMetronome}
         onSteps={resizeSteps}
@@ -390,11 +412,36 @@ export default function App() {
             return r ?? prev
           }, false)
         }
-        onClear={() => commit(createEmptyPattern(pattern.steps))}
-        onStarter={() => commit(createStarterPattern())}
+        onClear={clearSteps}
+        onStarter={() => {
+          commit(createStarterPattern())
+          setStatus('Loaded starter')
+        }}
         onExport={() => void exportWav()}
         onSave={() => void save()}
       />
+
+      <div className="sticky-transport" aria-label="Quick transport">
+        <button
+          type="button"
+          className={`play sticky-play ${playing ? 'is-playing' : ''}`}
+          onClick={() => void togglePlay()}
+          aria-pressed={playing}
+        >
+          {playing ? 'Stop' : 'Play'}
+        </button>
+        <label className="ctrl sticky-bpm">
+          <span>BPM</span>
+          <input
+            type="range"
+            min={40}
+            max={240}
+            value={bpm}
+            onChange={(e) => setBpmSafe(Number(e.target.value))}
+          />
+          <span className="val">{bpm}</span>
+        </label>
+      </div>
 
       <nav className="tabs" aria-label="Views">
         {(
@@ -548,7 +595,7 @@ export default function App() {
             setActiveBank(next)
             setStatus(`Duplicated → ${next}`)
           }}
-          onClear={() => commit(createEmptyPattern(pattern.steps))}
+          onClear={clearSteps}
           onToggleSong={(id) =>
             setSong((prev) =>
               prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
