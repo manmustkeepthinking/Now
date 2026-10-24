@@ -114,7 +114,7 @@ export function Transport({
         <button type="button" className="ghost" onClick={onStarter}>
           Starter
         </button>
-        <button type="button" className="ghost" onClick={onClear}>
+        <button type="button" className="ghost clear-btn" onClick={onClear}>
           Clear
         </button>
         <button type="button" className="ghost" onClick={onSave}>

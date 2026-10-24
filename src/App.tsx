@@ -84,6 +84,12 @@ export default function App() {
   const [selected, setSelected] = useState<TrackId>('eightOhEight')
   const [samples, setSamples] = useState<StoredSample[]>([])
   const [status, setStatus] = useState('')
+  const [flashClear, setFlashClear] = useState(false)
+  const activeBankRef = useRef(activeBank)
+
+  useEffect(() => {
+    activeBankRef.current = activeBank
+  }, [activeBank])
 
   const syncHistoryFlags = () => {
     setCanUndo(historyRef.current.canUndo)
@@ -93,16 +99,17 @@ export default function App() {
   const setPattern = useCallback(
     (next: PatternState | ((p: PatternState) => PatternState), record = true) => {
       setBanks((prev) => {
-        const cur = prev[activeBank]
+        const bank = activeBankRef.current
+        const cur = prev[bank]
         const resolved = typeof next === 'function' ? next(cur) : next
         if (record) {
           historyRef.current.push(cur)
           queueMicrotask(syncHistoryFlags)
         }
-        return { ...prev, [activeBank]: resolved }
+        return { ...prev, [bank]: resolved }
       })
     },
-    [activeBank],
+    [],
   )
 
   const commit = useCallback(
@@ -271,11 +278,19 @@ export default function App() {
     setBpm(Math.min(240, Math.max(40, Math.round(raw))))
   }
 
-  const clearSteps = () => {
-    commit((prev) => {
-      const next = structuredClone(prev)
+  const clearSteps = useCallback(() => {
+    const bank = activeBankRef.current
+    // Stop so the empty grid is obvious (no playhead racing)
+    engineRef.current?.stop()
+    setPlaying(false)
+    setActiveStep(0)
+    setBanks((prev) => {
+      const cur = prev[bank]
+      historyRef.current.push(cur)
+      queueMicrotask(syncHistoryFlags)
+      const tracks = { ...cur.tracks }
       for (const id of TRACK_IDS) {
-        next.tracks[id] = next.tracks[id].map((s) => ({
+        tracks[id] = cur.tracks[id].map((s) => ({
           ...s,
           on: false,
           muted: false,
@@ -283,10 +298,12 @@ export default function App() {
           probability: 1,
         }))
       }
-      return next
+      return { ...prev, [bank]: { ...cur, tracks } }
     })
-    setStatus(`Cleared pattern ${activeBank}`)
-  }
+    setFlashClear(true)
+    setStatus(`Cleared pattern ${bank}`)
+    window.setTimeout(() => setFlashClear(false), 500)
+  }, [])
 
   const onTap = () => {
     const now = performance.now()
@@ -367,7 +384,7 @@ export default function App() {
   const melodicSelected = useMemo(() => isMelodic(selected), [selected])
 
   return (
-    <div className="shell">
+    <div className={`shell ${flashClear ? 'is-cleared' : ''}`}>
       <div className="atmosphere" aria-hidden="true" />
 
       {!unlocked && (
@@ -378,50 +395,8 @@ export default function App() {
         </button>
       )}
 
-      <header className="masthead">
-        <p className="brand">NOW</p>
-        <h1 className="headline">Beat lab</h1>
-        <p className="lede">iPhone beat machine — paint, glide 808s, import Splice.</p>
-      </header>
-
-      <Transport
-        playing={playing}
-        bpm={bpm}
-        swing={swing}
-        metronome={metronome}
-        steps={pattern.steps}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onTogglePlay={() => void togglePlay()}
-        onBpm={setBpmSafe}
-        onSwing={setSwing}
-        onMetronome={setMetronome}
-        onSteps={resizeSteps}
-        onTap={onTap}
-        onUndo={() =>
-          setPattern((prev) => {
-            const u = historyRef.current.undo(prev)
-            queueMicrotask(syncHistoryFlags)
-            return u ?? prev
-          }, false)
-        }
-        onRedo={() =>
-          setPattern((prev) => {
-            const r = historyRef.current.redo(prev)
-            queueMicrotask(syncHistoryFlags)
-            return r ?? prev
-          }, false)
-        }
-        onClear={clearSteps}
-        onStarter={() => {
-          commit(createStarterPattern())
-          setStatus('Loaded starter')
-        }}
-        onExport={() => void exportWav()}
-        onSave={() => void save()}
-      />
-
       <div className="sticky-transport" aria-label="Quick transport">
+        <div className="sticky-brand">NOW</div>
         <button
           type="button"
           className={`play sticky-play ${playing ? 'is-playing' : ''}`}
@@ -429,6 +404,13 @@ export default function App() {
           aria-pressed={playing}
         >
           {playing ? 'Stop' : 'Play'}
+        </button>
+        <button
+          type="button"
+          className={`sticky-clear ${flashClear ? 'is-flash' : ''}`}
+          onClick={clearSteps}
+        >
+          Clear
         </button>
         <label className="ctrl sticky-bpm">
           <span>BPM</span>
@@ -604,6 +586,46 @@ export default function App() {
           onClearSong={() => setSong([])}
         />
       )}
+
+      <details className="more-controls">
+        <summary>More controls</summary>
+        <Transport
+          playing={playing}
+          bpm={bpm}
+          swing={swing}
+          metronome={metronome}
+          steps={pattern.steps}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onTogglePlay={() => void togglePlay()}
+          onBpm={setBpmSafe}
+          onSwing={setSwing}
+          onMetronome={setMetronome}
+          onSteps={resizeSteps}
+          onTap={onTap}
+          onUndo={() =>
+            setPattern((prev) => {
+              const u = historyRef.current.undo(prev)
+              queueMicrotask(syncHistoryFlags)
+              return u ?? prev
+            }, false)
+          }
+          onRedo={() =>
+            setPattern((prev) => {
+              const r = historyRef.current.redo(prev)
+              queueMicrotask(syncHistoryFlags)
+              return r ?? prev
+            }, false)
+          }
+          onClear={clearSteps}
+          onStarter={() => {
+            commit(createStarterPattern())
+            setStatus('Loaded starter')
+          }}
+          onExport={() => void exportWav()}
+          onSave={() => void save()}
+        />
+      </details>
 
       {status && <p className="status">{status}</p>}
       <p className="hint">Add to Home Screen for offline · Files → Splice → Samples</p>

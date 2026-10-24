@@ -3,7 +3,7 @@
   z-index: 1;
   width: min(720px, 100%);
   margin: 0 auto;
-  padding: 1rem 0.85rem 5.5rem;
+  padding: 7.5rem 0.85rem 3rem;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
@@ -90,26 +90,101 @@
 }
 
 .sticky-transport {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 8;
+  left: 0;
+  right: 0;
+  z-index: 20;
   display: grid;
-  grid-template-columns: 6.5rem 1fr;
-  gap: 0.55rem;
+  grid-template-columns: auto 1fr 1fr;
+  gap: 0.45rem;
   align-items: center;
-  padding: 0.45rem 0;
-  background: linear-gradient(180deg, #090a0d 75%, transparent);
+  padding: 0.55rem 0.85rem 0.65rem;
+  padding-top: max(0.55rem, env(safe-area-inset-top));
+  background: rgba(9, 10, 13, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.sticky-brand {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  padding-right: 0.15rem;
 }
 
 .sticky-play {
   width: 100%;
-  min-height: 2.85rem;
-  font-size: 1rem;
+  min-height: 3rem;
+  font-size: 1.05rem;
   padding: 0.55rem 0.75rem;
 }
 
+.sticky-clear {
+  appearance: none;
+  border: 2px solid #e85d4c;
+  background: rgba(232, 93, 76, 0.15);
+  color: #ffb4a8;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  min-height: 3rem;
+  border-radius: 999px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.sticky-clear:active,
+.sticky-clear.is-flash {
+  background: #e85d4c;
+  color: #0a0b0e;
+}
+
 .sticky-bpm {
+  grid-column: 1 / -1;
   margin: 0;
+}
+
+.more-controls {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.85rem;
+  padding: 0.35rem 0.75rem 0.75rem;
+}
+
+.more-controls summary {
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.more-controls summary::-webkit-details-marker {
+  display: none;
+}
+
+.shell.is-cleared .sequencer .step.is-on::after {
+  animation: clear-pop 0.35s ease;
+}
+
+@keyframes clear-pop {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.6);
+  }
 }
 
 .sticky-bpm input[type='range'],
@@ -238,10 +313,15 @@
 
 .tabs {
   position: sticky;
-  top: 3.6rem;
+  top: 6.8rem;
   z-index: 5;
   padding: 0.35rem 0;
   background: linear-gradient(180deg, #090a0d 70%, transparent);
+}
+
+.clear-btn {
+  border-color: rgba(232, 93, 76, 0.55) !important;
+  color: #ffb4a8 !important;
 }
 
 .transport-actions {
